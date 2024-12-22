@@ -22,17 +22,16 @@
     <div style="margin-top: 8px;">
 
         <!-- Notice value="@currentInput" so we can show selected suggestion if user chooses one -->
-        <input value="@currentInput" @oninput="OnInputChanged" @onkeydown="HandleKeyDown" @* We'll handle arrow up/down
-            here *@ style="width: 80%;" placeholder="Type your command..." />
+        <input value="@currentInput" @oninput="OnInputChanged" @onkeydown="HandleKeyDown" style="width: 80%;"
+            placeholder="Type your command..." />
 
         @if (suggestions?.Any() == true)
         {
-            <!-- Make suggestions scrollable -->
             <ul
                 style="background: #222; color: #fff; list-style-type: none; margin:0; padding:4px; max-height: 150px; overflow-y: auto;">
                 @for (int i = 0; i < suggestions.Count; i++)
                 {
-                    <li @key="i" class="@(() => @GetSuggestionCssClass(i))" @onclick="() => AcceptSuggestion(suggestions[i])">
+                    <li @key="i" class="@GetSuggestionCssClass(i)" @onclick="() => AcceptSuggestion(suggestions[i])">
                         @suggestions[i]
                     </li>
                 }
