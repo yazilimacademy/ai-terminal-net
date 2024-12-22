@@ -1,0 +1,260 @@
+﻿@page "/terminal"
+
+<h3>Docker Commands - Local Suggestions</h3>
+
+<div style="display: flex; flex-direction: column; height: 80vh;">
+    <!-- Console Output -->
+    <div style="flex: 1; overflow-y: auto; background-color: #111; color: #0f0; padding: 8px;">
+        @if (terminalOutputList?.Any() == true)
+        {
+            @foreach (var line in terminalOutputList)
+            {
+                <div>@line</div>
+            }
+        }
+        else
+        {
+            <div>[No output yet]</div>
+        }
+    </div>
+
+    <!-- Command Input + Suggestions -->
+    <div style="margin-top: 8px;">
+
+        <!-- Notice value="@currentInput" so we can show selected suggestion if user chooses one -->
+        <input value="@currentInput" @oninput="OnInputChanged" @onkeydown="HandleKeyDown" @* We'll handle arrow up/down
+            here *@ style="width: 80%;" placeholder="Type your command..." />
+
+        @if (suggestions?.Any() == true)
+        {
+            <!-- Make suggestions scrollable -->
+            <ul
+                style="background: #222; color: #fff; list-style-type: none; margin:0; padding:4px; max-height: 150px; overflow-y: auto;">
+                @for (int i = 0; i < suggestions.Count; i++)
+                {
+                    <li @key="i" class="@(() => @GetSuggestionCssClass(i))" @onclick="() => AcceptSuggestion(suggestions[i])">
+                        @suggestions[i]
+                    </li>
+                }
+            </ul>
+        }
+    </div>
+</div>
+
+@code {
+    private string currentInput = string.Empty;
+    private List<string> terminalOutputList = new();
+    private List<string> suggestions = new();
+
+    // Track which suggestion is highlighted; -1 = none
+    private int selectedIndex = -1;
+
+    // Example Docker command list (replace with your full list):
+
+
+    protected void OnInputChanged(ChangeEventArgs e)
+    {
+        suggestions.Clear();
+        selectedIndex = -1; // reset highlight each time user changes input
+
+        var typedText = e.Value?.ToString() ?? "";
+        currentInput = typedText;
+
+        if (string.IsNullOrWhiteSpace(typedText))
+            return;
+
+        // Show more suggestions if you want (e.g., 20)
+        var localRecs = DockerCommands
+        .Where(cmd => cmd.StartsWith(typedText, StringComparison.OrdinalIgnoreCase))
+        .Take(20) // show up to 20
+        .ToList();
+
+        if (localRecs.Any())
+            suggestions.AddRange(localRecs);
+
+        StateHasChanged();
+    }
+
+    // KeyDown to handle arrow keys + Enter
+    private async Task HandleKeyDown(KeyboardEventArgs e)
+    {
+        // 'ArrowDown' => move selection down
+        if (e.Key == "ArrowDown")
+        {
+            // keep focus in input
+            if (suggestions.Any())
+            {
+                selectedIndex++;
+                if (selectedIndex >= suggestions.Count)
+                    selectedIndex = 0; // wrap around or clamp
+            }
+        }
+        // 'ArrowUp' => move selection up
+        else if (e.Key == "ArrowUp")
+        {
+
+            if (suggestions.Any())
+            {
+                selectedIndex--;
+                if (selectedIndex < 0)
+                    selectedIndex = suggestions.Count - 1; // wrap around or clamp
+            }
+        }
+        // 'Enter' => accept the current suggestion if available
+        else if (e.Key == "Enter")
+        {
+
+
+            // If we have a valid selectedIndex, use that
+            if (selectedIndex >= 0 && selectedIndex < suggestions.Count)
+            {
+                AcceptSuggestion(suggestions[selectedIndex]);
+            }
+            else
+            {
+                // Otherwise, user just pressed enter with no highlighted suggestion
+                // => Run or do your existing logic
+                await RunCommand(currentInput);
+            }
+        }
+        // handle other keys if needed...
+        StateHasChanged();
+    }
+
+    private async Task RunCommand(string command)
+    {
+        suggestions.Clear();
+        selectedIndex = -1;
+
+        terminalOutputList.Add($"> {command}");
+
+        // (Mock or real command)
+        await Task.Delay(200);
+        terminalOutputList.Add($"[Executed '{command}']");
+
+        currentInput = string.Empty;
+        StateHasChanged();
+    }
+
+    private void AcceptSuggestion(string suggestion)
+    {
+        currentInput = suggestion;
+        suggestions.Clear();
+        selectedIndex = -1;
+        StateHasChanged();
+    }
+
+    // Helper to highlight the selected item
+    private string GetSuggestionCssClass(int index)
+    {
+        return index == selectedIndex ? "highlighted-suggestion" : "";
+    }
+
+    private static readonly List<string> DockerCommands = new()
+{
+"docker run",
+"docker start",
+"docker stop",
+"docker restart",
+"docker pause",
+"docker unpause",
+"docker kill",
+"docker rm",
+"docker ps",
+"docker ps -a",
+"docker inspect",
+"docker logs",
+"docker stats",
+"docker top",
+"docker port",
+"docker diff",
+"docker images",
+"docker pull",
+"docker push",
+"docker rmi",
+"docker build",
+"docker tag",
+"docker save",
+"docker load",
+"docker import",
+"docker attach",
+"docker exec",
+"docker cp",
+"docker export",
+"docker commit",
+"docker network create",
+"docker network connect",
+"docker network disconnect",
+"docker network ls",
+"docker network rm",
+"docker network inspect",
+"docker network prune",
+"docker volume create",
+"docker volume inspect",
+"docker volume ls",
+"docker volume rm",
+"docker volume prune",
+"docker login",
+"docker logout",
+"docker search",
+"docker info",
+"docker version",
+"docker compose up",
+"docker compose down",
+"docker compose start",
+"docker compose stop",
+"docker compose restart",
+"docker compose ps",
+"docker compose logs",
+"docker compose build",
+"docker compose pull",
+"docker compose push",
+"docker build --no-cache",
+"docker build -t",
+"docker build --pull",
+"docker build --target",
+"docker run -d",
+"docker run -p",
+"docker run -v",
+"docker run -e",
+"docker run --name",
+"docker run --rm",
+"docker run -it",
+"docker run --network",
+"docker system df",
+"docker system prune",
+"docker system info",
+"docker system events",
+"docker run --cpu-shares",
+"docker run --memory",
+"docker run --dns",
+"docker run --entrypoint",
+"docker run --user",
+"docker run --workdir",
+"docker run --read-only",
+"docker run --restart",
+"docker swarm init",
+"docker swarm join",
+"docker swarm leave",
+"docker service create",
+"docker service inspect",
+"docker service ls",
+"docker service rm",
+"docker service scale",
+"docker service update",
+"docker trust inspect",
+"docker trust key",
+"docker trust revoke",
+"docker trust sign",
+"docker logs -f",
+"docker logs --since",
+"docker logs --until",
+"docker logs --tail",
+"docker checkpoint create",
+"docker checkpoint ls",
+"docker checkpoint rm",
+"docker container prune",
+"docker image prune"
+};
+
+}
